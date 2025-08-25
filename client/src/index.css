@@ -1,0 +1,24 @@
+
+@import "tailwindcss";
+
+/* Allow background to grow with content to avoid cutoff on long pages */
+html, body, #root { min-height: 100%; }
+html { background-color: #0a0b0f; }
+body {
+	/* Soften crimson with deeper base and a cool overlay */
+	background:
+		/* Top-left crimson glow */
+		radial-gradient(1200px 800px at 10% -10%, rgba(107, 26, 26, 0.9) 0%, rgba(107, 26, 26, 0) 70%),
+		/* Top-right rose glow */
+		radial-gradient(1000px 700px at 85% 0%, rgba(139, 30, 54, 0.85) 0%, rgba(139, 30, 54, 0) 65%),
+		/* Bottom subtle cool blend to avoid cutoff */
+		radial-gradient(1200px 800px at 50% 120%, rgba(56, 189, 248, 0.08) 0%, rgba(56, 189, 248, 0) 70%),
+		/* Base dark gradient */
+		linear-gradient(180deg, #0e0e11 0%, #0a0b0f 100%);
+	background-repeat: no-repeat;
+	/* Keep layers steady during scroll to avoid perceived cutoff lines */
+	background-attachment: fixed, fixed, fixed, fixed;
+	color: #e5e7eb; /* slate-200 */
+}
+
+::selection { background: #38bdf8; color: #0b0b0d; } /* sky-400 */
