@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { OAuth2Client } from "google-auth-library";
 
 export async function register(req, res) {
   try {
@@ -69,5 +70,49 @@ export async function updateProfile(req, res) {
     return res.json(user);
   } catch (e) {
     return res.status(500).json({ error: "Server error" });
+  }
+}
+
+// Google Sign-In: exchange a Google ID token (credential) for our JWT
+export async function googleSignIn(req, res) {
+  try {
+    const { credential, idToken } = req.body || {};
+    const token = credential || idToken;
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId)
+      return res.status(500).json({ error: "Google not configured" });
+    if (!token) return res.status(400).json({ error: "Missing credential" });
+
+    const client = new OAuth2Client(clientId);
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: clientId,
+    });
+    const payload = ticket.getPayload();
+    const email = (payload.email || "").trim().toLowerCase();
+    const name = payload.name || email.split("@")[0];
+    const picture = payload.picture;
+    if (!email)
+      return res.status(400).json({ error: "No email in Google profile" });
+
+    // Find user by email (case-insensitive) and upsert
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = await User.create({
+        name,
+        email,
+        passwordHash: await bcrypt.hash("google-signin", 8),
+        avatarUrl: picture,
+      });
+    }
+    const appToken = jwt.sign(
+      { sub: user._id, role: "user", email: user.email },
+      process.env.JWT_SECRET || "devsecret",
+      { expiresIn: "7d" }
+    );
+    return res.json({ token: appToken });
+  } catch (e) {
+    console.error("Google sign-in error:", e?.message || e);
+    return res.status(401).json({ error: "Google authentication failed" });
   }
 }

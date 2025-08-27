@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../../shared/axiosClient';
+import AdminLayout from './AdminLayout';
 
 export default function ContentEditor() {
   const [form, setForm] = useState({ rules: '', prizes: '', timeline: '' });
@@ -17,8 +18,7 @@ export default function ContentEditor() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
-      <h1 className="text-2xl font-bold text-white">Content Management</h1>
+    <AdminLayout title="Content Management">
       {['rules','prizes','timeline'].map((k) => (
         <div key={k} className="mt-6">
           <label className="block text-sm font-medium capitalize text-slate-200">{k}</label>
@@ -26,6 +26,6 @@ export default function ContentEditor() {
         </div>
       ))}
       <button className="mt-6 rounded-lg bg-rose-600 hover:bg-rose-500 text-white px-6 py-2" onClick={save}>Save</button>
-    </div>
+    </AdminLayout>
   );
 }

@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../shared/axiosClient';
-import { Trophy } from 'lucide-react';
+import { Trophy, X } from 'lucide-react';
+import usePolling from '../shared/usePolling';
 
 export default function Leaderboard() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tooltip, setTooltip] = useState({ show: false, x: 0, y: 0, entry: null });
+  const [sortBy, setSortBy] = useState('score');
+  const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -15,9 +19,60 @@ export default function Leaderboard() {
     return () => { mounted = false; };
   }, []);
 
-  const topThree = useMemo(() => rows.slice(0, 3), [rows]);
+  // Live updates via polling
+  usePolling(async () => {
+    try {
+      const res = await api.get('/api/leaderboard');
+      setRows(res.data || []);
+    } catch {}
+  }, 15000, []);
+
+  const processed = useMemo(() => {
+    let r = [...rows];
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      r = r.filter((x) => (x.name || '').toLowerCase().includes(q) || (x.teamName || '').toLowerCase().includes(q) || (x.title || '').toLowerCase().includes(q));
+    }
+    if (sortBy === 'name') r.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    else if (sortBy === 'title') r.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+    else r.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    return r;
+  }, [rows, sortBy, query]);
+
+  const topThree = useMemo(() => processed.slice(0, 3), [processed]);
+
+  // Fastest submission (earliest createdAt) among current dataset
+  const fastestId = useMemo(() => {
+    const withDates = processed.filter((x) => !!x.createdAt);
+    if (!withDates.length) return null;
+    const min = withDates.reduce((acc, cur) => (new Date(cur.createdAt) < new Date(acc.createdAt) ? cur : acc));
+    return min?._id || min?.id || null;
+  }, [processed]);
 
   const displayName = (r) => r?.name || r?.teamName || '—';
+  const Avatar = ({ entry, size = 40 }) => {
+    const name = displayName(entry);
+    const initials = name
+      .split(' ')
+      .map((p) => p[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
+    const src = entry?.profile?.avatarUrl;
+    const dim = `${size}px`;
+    return (
+      <div
+        className="rounded-full overflow-hidden border border-white/10 bg-white/5 flex items-center justify-center text-slate-200"
+        style={{ width: dim, height: dim }}
+      >
+        {src ? (
+          <img src={src} alt={name} className="w-full h-full object-cover" />
+        ) : (
+          <span className="text-sm">{initials}</span>
+        )}
+      </div>
+    );
+  };
 
   function showTip(entry, e) {
     if (!e) return;
@@ -37,7 +92,17 @@ export default function Leaderboard() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-12">
-      <h1 className="text-3xl font-bold text-white">Leaderboard</h1>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <h1 className="text-3xl font-bold text-white">Leaderboard</h1>
+        <div className="flex items-center gap-2">
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name, team, or title" className="w-56 rounded-lg border border-white/10 bg-white/5 text-slate-100 placeholder:text-slate-400 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-600" />
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="rounded-lg border border-white/10 bg-transparent text-slate-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-600">
+            <option value="score">Sort by: Score</option>
+            <option value="name">Sort by: Name</option>
+            <option value="title">Sort by: Title</option>
+          </select>
+        </div>
+      </div>
       {loading ? (
         <p className="mt-6 text-slate-300">Loading…</p>
       ) : rows.length === 0 ? (
@@ -96,7 +161,7 @@ export default function Leaderboard() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r, idx) => (
+                {processed.map((r, idx) => (
                   <tr
                     key={r._id || idx}
                     className={
@@ -118,7 +183,18 @@ export default function Leaderboard() {
                       {idx + 1} {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : ''}
                     </td>
                     <td className="px-4 py-2">
-                      {displayName(r)}
+                      <div className="flex items-center gap-3">
+                        <Avatar entry={r} size={36} />
+                        <div className="min-w-0">
+                          <button className="text-sky-300 hover:text-sky-200 underline" onClick={() => setSelected(r)}>
+                            {displayName(r)}
+                          </button>
+                          <div className="text-xs text-slate-400 truncate">{r.teamName || r.profile?.place || ''}</div>
+                        </div>
+                      </div>
+                      {fastestId && (r._id === fastestId || r.id === fastestId) && (
+                        <span className="ml-2 inline-flex items-center text-[11px] px-2 py-0.5 rounded-full bg-emerald-600/30 text-emerald-200 border border-emerald-500/40" title="Fastest Submission">⚡ Fastest</span>
+                      )}
                     </td>
                     <td className="px-4 py-2">{r.score ?? '—'}</td>
                     <td className="px-4 py-2">
@@ -148,12 +224,18 @@ export default function Leaderboard() {
               style={{ left: tooltip.x, top: tooltip.y }}
               role="tooltip"
             >
-              <div className="text-sm font-semibold truncate">{displayName(tooltip.entry)}</div>
+              <div className="text-sm font-semibold truncate flex items-center gap-2">
+                <Avatar entry={tooltip.entry} size={24} />
+                <span className="truncate">{displayName(tooltip.entry)}</span>
+              </div>
               <div className="mt-1 text-xs text-slate-300">
                 <div><span className="text-slate-400">Title:</span> {tooltip.entry.title || '—'}</div>
                 <div><span className="text-slate-400">Score:</span> {tooltip.entry.score ?? '—'}</div>
                 {tooltip.entry.teamName ? (
                   <div><span className="text-slate-400">Team:</span> {tooltip.entry.teamName}</div>
+                ) : null}
+                {tooltip.entry.profile?.place ? (
+                  <div><span className="text-slate-400">Place:</span> {tooltip.entry.profile.place}</div>
                 ) : null}
                 {tooltip.entry.createdAt ? (
                   <div><span className="text-slate-400">Submitted:</span> {new Date(tooltip.entry.createdAt).toLocaleString()}</div>
@@ -163,6 +245,40 @@ export default function Leaderboard() {
                     <a className="text-sky-300 hover:text-sky-200 underline" href={tooltip.entry.projectLink} target="_blank" rel="noreferrer">Open project ↗</a>
                   </div>
                 ) : null}
+              </div>
+            </div>
+          )}
+
+          {/* Profile modal */}
+          {selected && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/70" onClick={() => setSelected(null)} />
+              <div className="relative z-10 w-full max-w-xl mx-4 rounded-2xl border border-white/10 bg-black/70 backdrop-blur shadow-2xl">
+                <div className="flex items-center justify-between p-4 border-b border-white/10">
+                  <h3 className="text-white font-semibold">{displayName(selected)}</h3>
+                  <button aria-label="Close" onClick={() => setSelected(null)} className="text-slate-300 hover:text-white"><X className="w-5 h-5" /></button>
+                </div>
+                <div className="p-4 text-slate-200 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Avatar entry={selected} size={48} />
+                    <div>
+                      <div className="text-white font-semibold">{displayName(selected)}</div>
+                      <div className="text-slate-400 text-sm">{selected.teamName || selected.profile?.place || ''}</div>
+                    </div>
+                  </div>
+                  {selected.screenshotUrl ? (
+                    <img src={selected.screenshotUrl} alt="Project preview" className="w-full h-48 object-cover rounded-lg border border-white/10" />
+                  ) : null}
+                  <div><span className="text-slate-400">Title:</span> {selected.title || '—'}</div>
+                  <div><span className="text-slate-400">Score:</span> {selected.score ?? '—'}</div>
+                  <div className="truncate"><span className="text-slate-400">Link:</span> {selected.projectLink ? (<a className="text-sky-300 hover:text-sky-200 underline" href={selected.projectLink} target="_blank" rel="noreferrer">Open project ↗</a>) : '—'}</div>
+                  {selected.profile?.bio ? (
+                    <p className="text-slate-300 text-sm whitespace-pre-wrap">{selected.profile.bio}</p>
+                  ) : null}
+                  {selected.description ? (
+                    <p className="text-slate-300 text-sm whitespace-pre-wrap">{selected.description}</p>
+                  ) : null}
+                </div>
               </div>
             </div>
           )}
@@ -182,12 +298,6 @@ function PodiumCard({ place, entry, heightClass, accent, crown, onEnter, onMove,
     );
   }
   const name = entry.name || entry.teamName || '—';
-  const initials = name
-    .split(' ')
-    .map((p) => p[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
 
   const medal = place === 1 ? '🥇' : place === 2 ? '🥈' : '🥉';
 
@@ -203,9 +313,7 @@ function PodiumCard({ place, entry, heightClass, accent, crown, onEnter, onMove,
       )}
       <div className="absolute inset-x-0 bottom-0 h-24 bg-black/30 backdrop-blur-sm" />
       <div className="relative z-10 flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-black/30 border border-white/10 grid place-items-center text-slate-200">
-          {initials}
-        </div>
+        <PodiumAvatar entry={entry} />
         <div className="min-w-0">
           <div className="text-slate-100 font-semibold truncate">{name}</div>
           <div className="text-slate-300 text-sm">Score: {entry.score ?? '—'}</div>
@@ -224,6 +332,22 @@ function PodiumCard({ place, entry, heightClass, accent, crown, onEnter, onMove,
           {medal}
         </div>
       </div>
+    </div>
+  );
+}
+
+function PodiumAvatar({ entry }) {
+  const name = entry?.name || entry?.teamName || '';
+  const initials = name
+    .split(' ')
+    .map((p) => p[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+  const src = entry?.profile?.avatarUrl;
+  return (
+    <div className="w-12 h-12 rounded-full overflow-hidden bg-black/30 border border-white/10 grid place-items-center text-slate-200">
+      {src ? <img src={src} alt={name} className="w-full h-full object-cover" /> : initials}
     </div>
   );
 }

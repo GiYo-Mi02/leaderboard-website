@@ -9,11 +9,15 @@ export async function register(req, res) {
   try {
     let { name, email, teamName, title, projectLink, description } = req.body;
     name = typeof name === "string" ? name.trim() : name;
-    const authEmail = req.user?.email;
-    email =
-      typeof (authEmail || email) === "string"
-        ? (authEmail || email).trim().toLowerCase()
-        : email;
+    const authEmail = (req.user?.email || "").trim().toLowerCase();
+    const bodyEmail = (email || "").trim().toLowerCase();
+    // Force using authenticated email; block attempts to register another email
+    if (bodyEmail && authEmail && bodyEmail !== authEmail) {
+      return res
+        .status(400)
+        .json({ error: "Email mismatch with your account" });
+    }
+    email = authEmail || bodyEmail;
     console.log("[register] attempt", {
       authEmail: req.user?.email,
       bodyEmail: req.body?.email,

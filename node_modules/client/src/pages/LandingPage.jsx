@@ -1,21 +1,34 @@
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { Trophy, Users, CalendarDays, Info, Star } from 'lucide-react';
+import { Trophy, Users, CalendarDays, Info, Star, ChevronDown, BookOpen, Sparkles, Target, Lightbulb } from 'lucide-react';
 import judge1 from '../assets/judgepic1.webp';
 import judge2 from '../assets/jusdgepic2.webp';
 import judge3 from '../assets/judgepic3.webp';
 import Countdown from '../shared/Countdown';
+import api from '../shared/axiosClient';
 
 export default function LandingPage() {
   const [selectedPrize, setSelectedPrize] = useState(null);
+  const [selectedJudge, setSelectedJudge] = useState(null);
+  const [openRule, setOpenRule] = useState(null);
+  const [content, setContent] = useState(null);
 
   useEffect(() => {
     function onKey(e) {
-      if (e.key === 'Escape') setSelectedPrize(null);
+      if (e.key === 'Escape') {
+        setSelectedPrize(null);
+        setSelectedJudge(null);
+      }
     }
-    if (selectedPrize) window.addEventListener('keydown', onKey);
+    if (selectedPrize || selectedJudge) window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selectedPrize]);
+  }, [selectedPrize, selectedJudge]);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.get('/api/content').then(res => { if (!cancelled) setContent(res.data || {}); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -48,7 +61,7 @@ export default function LandingPage() {
               Register Now
             </a>
             <a
-              href="#about"
+              href="#event"
               className="inline-flex items-center rounded-xl border border-white/15 px-6 py-3 text-slate-200 transition-all transform hover:-translate-y-0.5 hover:bg-white/10 hover:border-white/25"
             >
               Learn More
@@ -60,23 +73,195 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Introduction & Objectives */}
+      <section id="intro" className="relative py-14">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute top-10 left-10 w-[420px] h-[420px] rounded-full bg-rose-700/10 blur-3xl" />
+          <div className="absolute bottom-0 right-20 w-[520px] h-[520px] rounded-full bg-sky-600/10 blur-3xl" />
+        </div>
+        <div className="relative max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-6">
+          {/* Introduction */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <div className="flex items-center gap-3 text-rose-300">
+              <Target className="w-6 h-6" />
+              <h3 className="text-xl font-semibold text-white">Introduction</h3>
+            </div>
+            <div className="mt-4 space-y-3 text-slate-300">
+              <div>
+                <div className="text-slate-200 font-medium">Purpose</div>
+                <p className="text-sm">
+                  {content?.introPurpose
+                    ? String(content.introPurpose)
+                    : 'We\'re hosting this contest to celebrate modern web craftsmanship—bringing together creativity, code quality, performance, and accessibility.'}
+                </p>
+              </div>
+              <div>
+                <div className="text-slate-200 font-medium">Target participants</div>
+                <p className="text-sm">
+                  {content?.introTarget
+                    ? String(content.introTarget)
+                    : 'Open to students, developers, and designers—whether solo or in teams—who want to showcase and sharpen their skills.'}
+                </p>
+              </div>
+              <div>
+                <div className="text-slate-200 font-medium">Theme / Focus</div>
+                <p className="text-sm">
+                  {content?.introTheme
+                    ? String(content.introTheme)
+                    : 'Build experiences that are purposeful and delightful. Popular tracks include sustainability, e‑commerce, and creative storytelling.'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Objectives */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+            <div className="flex items-center gap-3 text-sky-300">
+              <Lightbulb className="w-6 h-6" />
+              <h3 className="text-xl font-semibold text-white">Objectives</h3>
+            </div>
+            <ul className="mt-4 list-disc list-inside text-slate-300 space-y-2">
+              {(
+                content?.objectives
+                  ? String(content.objectives).split('\n').filter(Boolean)
+                  : [
+                      'Encourage innovation in web development.',
+                      'Provide a platform for students and developers to showcase talent.',
+                      'Promote collaboration and real‑world coding skills.'
+                    ]
+              ).map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* About the Event */}
+      <section id="event" className="relative py-16">
+        {/* Decorative glows */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-[680px] h-[680px] rounded-full bg-rose-700/10 blur-3xl" />
+          <div className="absolute -bottom-20 right-10 w-[420px] h-[420px] rounded-full bg-sky-600/10 blur-3xl" />
+        </div>
+        <div className="relative max-w-6xl mx-auto px-6">
+          <div className="grid md:grid-cols-2 gap-10 items-start">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur"
+            >
+              <div className="flex items-center gap-3 text-rose-300">
+                <Sparkles className="w-6 h-6" />
+                <h2 className="text-2xl font-bold text-white">About the Event</h2>
+              </div>
+              <p className="mt-3 text-slate-300 leading-relaxed">
+                {content?.about
+                  ? String(content.about)
+                  : 'Our website-making competition brings together designers and developers to build fast, accessible, and beautiful web experiences. From concept to launch, contestants demonstrate craft in UX, performance, and storytelling—guided by modern best practices and judged by industry experts.'}
+              </p>
+              <ul className="mt-5 grid sm:grid-cols-2 gap-3">
+                {["Design that delights","Accessibility that includes","Performance that scales","Documentation that guides"].map((h, i) => (
+                  <li key={i} className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-3 text-slate-200">
+                    <span className="mt-1 inline-block h-2.5 w-2.5 rounded-full bg-rose-400" />
+                    <span className="text-sm">{h}</span>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, delay: 0.1 }}
+              className="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900/60 via-slate-800/40 to-rose-900/30 p-6 shadow-lg"
+            >
+              <div className="flex items-center gap-3 text-sky-300">
+                <BookOpen className="w-6 h-6" />
+                <h3 className="text-xl font-semibold text-white">Our Story</h3>
+              </div>
+              <p className="mt-2 text-slate-300">
+                {content?.historyIntro
+                  ? String(content.historyIntro)
+                  : 'What started as a friendly campus challenge evolved into a yearly celebration of creativity and code. Here\'s how it grew.'}
+              </p>
+
+              {/* Timeline */}
+              <div className="mt-5 relative">
+                <div className="absolute left-3 top-0 bottom-0 w-px bg-white/10" />
+                <ol className="space-y-4">
+                  {(
+                    content?.history
+                      ? String(content.history).split('\n').filter(Boolean)
+                      : [
+                          '2022: Inception — a dozen teams shipped their first prototypes.',
+                          '2023: Community — mentorship and workshops joined the program.',
+                          '2024: Scale — performance and a11y took center stage.',
+                          '2025: Global — participants collaborated across time zones.'
+                        ]
+                  ).map((line, i) => {
+                    const hasColon = line.includes(':');
+                    const year = hasColon ? line.split(':')[0].trim() : `Year ${i + 1}`;
+                    const text = hasColon ? line.split(':').slice(1).join(':').trim() : line;
+                    return (
+                      <li key={i} className="relative pl-10">
+                        <span className="absolute left-0 top-1.5 inline-flex h-3 w-3 rounded-full bg-sky-400 ring-4 ring-sky-400/20" />
+                        <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                          <div className="text-sm text-sky-300 font-semibold">{year}</div>
+                          <div className="text-slate-200 mt-0.5 text-sm">{text}</div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* Info */}
       <section id="about" className="max-w-6xl mx-auto px-6 py-14 grid md:grid-cols-3 gap-6">
-        {[{
-          icon: <CalendarDays className="w-6 h-6" />, title: 'Timeline', content: 'Submission deadline in 10 days. Results announced a week later.'
-        }, {
-          icon: <Info className="w-6 h-6" />, title: 'Rules', content: 'Original work only, no plagiarism, team up to 3, and follow code of conduct.'
-        }, {
-          icon: <Users className="w-6 h-6" />, title: 'Guidelines', content: 'Responsive design, accessibility, performance, and clear documentation.'
-        }].map((card, i) => (
-          <div
-            key={i}
-            className="group rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm text-slate-200 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-lg hover:shadow-rose-900/20"
-          >
-            <div className="flex items-center gap-3 text-sky-300 transition-colors group-hover:text-sky-200">{card.icon}<h3 className="font-semibold">{card.title}</h3></div>
-            <p className="mt-2 text-slate-300">{card.content}</p>
+        {/* Timeline Stepper */}
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="flex items-center gap-3 text-sky-300"><CalendarDays className="w-6 h-6" /><h3 className="font-semibold">Timeline</h3></div>
+          <ol className="mt-4 space-y-3">
+            {(content?.timeline ? String(content.timeline).split('\n').filter(Boolean) : ['Register','Submit','Judging','Winners']).map((step, idx) => (
+              <li key={idx} className="flex items-center gap-3">
+                <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${idx===0?'bg-rose-600 text-white':'bg-white/10 text-slate-200'}`}>{idx+1}</span>
+                <span className="text-slate-300">{step}</span>
+                {idx < 3 && <span className="flex-1 h-px bg-white/10 mx-2" />}
+              </li>
+            ))}
+          </ol>
+        </div>
+        {/* Rules Accordion */}
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="flex items-center gap-3 text-sky-300"><Info className="w-6 h-6" /><h3 className="font-semibold">Rules</h3></div>
+          <div className="mt-3 divide-y divide-white/10">
+            {((content?.rules ? String(content.rules).split('\n').filter(Boolean).map(line => ({q: line.split(':')[0]?.trim() || line, a: line.includes(':') ? line.split(':').slice(1).join(':').trim() : ''})) : [{q:'Original work only',a:'No plagiarism. Cite any third-party assets properly.'},{q:'Team size',a:'Up to 3 members per team.'},{q:'Code of conduct',a:'Be respectful and inclusive.'}])).map((r, i) => (
+              <button key={i} type="button" className="w-full text-left py-3 group" onClick={() => setOpenRule(openRule===i?null:i)}>
+                <div className="flex items-center justify-between text-slate-200">
+                  <span>{r.q}</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${openRule===i?'rotate-180':''}`} />
+                </div>
+                {openRule===i && <p className="mt-2 text-sm text-slate-300">{r.a}</p>}
+              </button>
+            ))}
           </div>
-        ))}
+        </div>
+        {/* Guidelines */}
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="flex items-center gap-3 text-sky-300"><Users className="w-6 h-6" /><h3 className="font-semibold">Guidelines</h3></div>
+          <ul className="mt-3 list-disc list-inside text-slate-300 space-y-1">
+            {(content?.prizes ? String(content.prizes).split('\n').filter(Boolean) : ['Responsive design','Accessibility','Performance','Clear documentation']).map((item, i) => (
+              <li key={i}>{item}</li>
+            ))}
+          </ul>
+        </div>
       </section>
 
       {/* Prizes */}
@@ -169,15 +354,19 @@ export default function LandingPage() {
         <h2 className="text-2xl font-bold text-white">Judges & Organizers</h2>
         <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
-            { img: judge1, name: 'Alex Kim', role: 'Staff Engineer · Frontend' },
-            { img: judge2, name: 'Priya Sharma', role: 'Design Lead · UX' },
-            { img: judge3, name: 'Diego Martinez', role: 'Performance Eng · Core Web Vitals' },
+            { img: judge1, name: 'Alex Kim', role: 'Staff Engineer · Frontend', email: 'alex.kim@example.com', phone: '(555) 123-9876', quote: 'Good luck to all upcoming participants—ship boldly, iterate quickly, and have fun learning!' },
+            { img: judge2, name: 'Priya Sharma', role: 'Design Lead · UX', email: 'priya.sharma@example.com', phone: '(555) 555-2470', quote: 'Wishing you all the best! Aim for clarity and empathy in every interaction.' },
+            { img: judge3, name: 'Diego Martinez', role: 'Performance Eng · Core Web Vitals', email: 'diego.martinez@example.com', phone: '(555) 890-4412', quote: 'May the frames be smooth and the bundles be light. You got this!' },
           ].map((j, i) => (
             <motion.div
               key={i}
               whileHover={{ y: -8, rotate: -0.4 }}
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              className="group rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm transition-colors hover:border-white/20"
+              className="group rounded-2xl border border-white/10 bg-white/5 p-6 shadow-sm transition-colors hover:border-white/20 cursor-pointer"
+              role="button"
+              tabIndex={0}
+              onClick={() => setSelectedJudge(j)}
+              onKeyDown={(e) => { if (e.key === 'Enter') setSelectedJudge(j); }}
             >
               <div className="w-20 h-20 rounded-full overflow-hidden border border-white/10">
                 <img src={j.img} alt={j.name} className="w-full h-full object-cover" />
@@ -189,6 +378,49 @@ export default function LandingPage() {
           ))}
         </div>
       </section>
+
+      {/* Judge Modal */}
+      {selectedJudge && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setSelectedJudge(null)} />
+          <div role="dialog" aria-modal="true" className="relative z-10 w-full max-w-lg mx-4 rounded-2xl border border-white/10 bg-black/70 backdrop-blur shadow-2xl">
+            <div className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full overflow-hidden border border-white/10">
+                  <img src={selectedJudge.img} alt={selectedJudge.name} className="w-full h-full object-cover" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">{selectedJudge.name}</h3>
+                  <p className="text-slate-300">{selectedJudge.role}</p>
+                </div>
+              </div>
+              <div className="mt-4 grid sm:grid-cols-2 gap-4 text-slate-200">
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                  <div className="text-slate-400 text-xs">Email</div>
+                  <a href={`mailto:${selectedJudge.email}`} className="text-sky-300 hover:text-sky-200 break-all">{selectedJudge.email}</a>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+                  <div className="text-slate-400 text-xs">Contact</div>
+                  <div>{selectedJudge.phone}</div>
+                </div>
+              </div>
+              {selectedJudge.quote && (
+                <blockquote className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4 text-slate-200 italic">
+                  “{selectedJudge.quote}”
+                </blockquote>
+              )}
+              <div className="mt-5 flex justify-end">
+                <button
+                  className="inline-flex items-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-slate-200 hover:bg-white/10"
+                  onClick={() => setSelectedJudge(null)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tips & Tricks */}
       <section className="max-w-6xl mx-auto px-6 py-14">

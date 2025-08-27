@@ -12,6 +12,8 @@ import SignIn from './pages/auth/SignIn';
 import SignUp from './pages/auth/SignUp';
 import Account from './pages/auth/Account';
 import './index.css';
+import ScrollReveal from './shared/ScrollReveal';
+import { Github, Twitter, Instagram, Linkedin, Mail } from 'lucide-react';
 
 function Nav() {
   const navigate = useNavigate();
@@ -149,10 +151,93 @@ function UserMenu({ user, onSignOut }) {
 
 function Footer() {
   return (
-    <footer className="border-t border-white/10 mt-20">
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between text-sm text-slate-400">
-        <p>© 2025 Website-Making Contest</p>
-        <a href="/leaderboard" className="text-sky-300 hover:text-sky-200">View Leaderboard</a>
+    <footer className="mt-20 border-t border-white/10 bg-black/40 backdrop-blur supports-[backdrop-filter]:bg-black/40">
+      <div className="max-w-6xl mx-auto px-6 py-10">
+        <div className="grid gap-8 md:grid-cols-3">
+          {/* Brand */}
+          <div>
+            <Link to="/" className="inline-flex items-center gap-3">
+              <div aria-hidden className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-600 to-sky-500 grid place-items-center border border-white/10 shadow">
+                <span className="text-sm font-bold text-white">CC</span>
+              </div>
+              <span className="text-white font-extrabold tracking-tight">Create &amp; Code 2025</span>
+            </Link>
+            <p className="mt-3 text-sm text-slate-400 max-w-sm">
+              A modern website-making contest celebrating thoughtful design, real-world UX, and blazing performance.
+            </p>
+          </div>
+
+          {/* Quick links */}
+          <div>
+            <h4 className="text-white font-semibold">Explore</h4>
+            <ul className="mt-3 space-y-2 text-sm">
+              <li><Link className="text-slate-300 hover:text-white" to="/leaderboard">Leaderboard</Link></li>
+              <li><Link className="text-slate-300 hover:text-white" to="/register">Register</Link></li>
+              <li><a className="text-slate-300 hover:text-white" href="/#event">About the Event</a></li>
+              <li><a className="text-slate-300 hover:text-white" href="/#intro">Introduction</a></li>
+            </ul>
+          </div>
+
+          {/* Social */}
+          <div>
+            <h4 className="text-white font-semibold">Connect</h4>
+            <div className="mt-3 flex items-center gap-3">
+              <a
+                aria-label="GitHub"
+                className="inline-flex w-10 h-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"
+                href="https://github.com/GiYo-Mi02/leaderboard-website"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Github className="w-5 h-5" />
+              </a>
+              <a
+                aria-label="Twitter"
+                className="inline-flex w-10 h-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"
+                href="#"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Twitter className="w-5 h-5" />
+              </a>
+              <a
+                aria-label="Instagram"
+                className="inline-flex w-10 h-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"
+                href="#"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Instagram className="w-5 h-5" />
+              </a>
+              <a
+                aria-label="LinkedIn"
+                className="inline-flex w-10 h-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"
+                href="#"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Linkedin className="w-5 h-5" />
+              </a>
+              <a
+                aria-label="Email"
+                className="inline-flex w-10 h-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"
+                href="mailto:contact@example.com"
+              >
+                <Mail className="w-5 h-5" />
+              </a>
+            </div>
+            <div className="mt-3 text-sm text-slate-400">contact@example.com</div>
+          </div>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3 text-sm text-slate-400">
+          <p>© 2025 Website-Making Contest — All rights reserved.</p>
+          <div className="flex items-center gap-4">
+            <a href="#" className="hover:text-slate-200">Privacy</a>
+            <a href="#" className="hover:text-slate-200">Terms</a>
+            <a href="/leaderboard" className="text-sky-300 hover:text-sky-200">View Leaderboard</a>
+          </div>
+        </div>
       </div>
     </footer>
   );
@@ -161,6 +246,7 @@ function Footer() {
 export default function App() {
   return (
     <BrowserRouter>
+  <ScrollReveal />
       <Nav />
       <Routes>
         <Route path="/" element={<LandingPage />} />

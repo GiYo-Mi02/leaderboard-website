@@ -57,7 +57,6 @@ function ToastItem({ type, message, details }) {
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium break-words whitespace-pre-wrap">{message}</div>
         </div>
-        <button title="Copy details" onClick={onCopy} className="shrink-0 rounded-md bg-white/10 hover:bg-white/20 text-white/90 px-2 py-1 text-xs">Copy</button>
       </div>
     </div>
   );

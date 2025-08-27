@@ -19,7 +19,40 @@ import Contestant from "./src/models/Contestant.js";
 dotenv.config();
 
 const app = express();
-app.use(helmet());
+// Helmet with CSP configured to allow Google Identity Services (accounts.google.com)
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        "default-src": ["'self'"],
+        "script-src": [
+          "'self'",
+          "https://accounts.google.com",
+          "https://apis.google.com",
+          "https://www.gstatic.com",
+        ],
+        "img-src": ["'self'", "data:", "https:"],
+        "style-src": ["'self'", "https:", "'unsafe-inline'"],
+        "connect-src": [
+          "'self'",
+          "https://accounts.google.com",
+          "https://apis.google.com",
+          "https://www.gstatic.com",
+        ],
+        "frame-src": ["'self'", "https://accounts.google.com"],
+        "form-action": ["'self'"],
+        "object-src": ["'none'"],
+        "frame-ancestors": ["'self'"],
+        "frame-src": [
+          "'self'",
+          "https://accounts.google.com",
+          "https://www.gstatic.com",
+        ],
+      },
+    },
+  })
+);
 app.use(
   cors({
     origin: process.env.CORS_ORIGIN?.split(",") || ["http://localhost:5173"],
@@ -33,11 +66,11 @@ app.use(morgan("dev"));
 fs.mkdirSync(path.resolve(process.cwd(), "uploads"), { recursive: true });
 app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
-const MONGO_URI =
-  process.env.MONGO_URI || "mongodb://127.0.0.1:27017/contestdb";
+const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017";
+const MONGO_DB = process.env.MONGO_DB || "LeaderboardDB";
 mongoose
-  .connect(MONGO_URI)
-  .then(() => console.log("Mongo connected"))
+  .connect(MONGO_URI, { dbName: MONGO_DB })
+  .then(() => console.log(`Mongo connected (db: ${MONGO_DB})`))
   .catch((err) => console.error("Mongo error", err));
 
 app.use("/api/leaderboard", leaderboardRoutes);

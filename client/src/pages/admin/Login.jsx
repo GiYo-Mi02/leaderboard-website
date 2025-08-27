@@ -16,13 +16,9 @@ export default function AdminLogin() {
         if (!mounted) return;
         setCanSeed(Boolean(res.data?.allowSeed));
         setAdminExists(Boolean(res.data?.exists));
-        if (res.data?.exists) {
-          setStatus('Admin account found. You can log in.');
-        } else if (res.data?.allowSeed) {
-          setStatus('No admin yet. You can seed a default admin.');
-        } else {
-          setStatus('No admin found and seeding is disabled.');
-        }
+  if (res.data?.exists) setStatus('Admin account found. You can log in.');
+  else if (res.data?.allowSeed) setStatus('No admin yet. You can seed an admin.');
+  else setStatus('No admin found and seeding is disabled.');
       } catch (_e) {
         // status will be handled by toast interceptor
       }
@@ -46,15 +42,17 @@ export default function AdminLogin() {
   }
 
   async function seedDefault() {
-    setStatus('Seeding default admin...');
+    setStatus('Seeding admin (or resetting password)...');
     try {
-      await api.post('/api/auth/seed', {
-        email: 'admin@example.com',
-        password: 'admin12345',
-      });
-      setEmail('admin@example.com');
-      setPassword('admin12345');
-      setStatus('Seeded. You can now log in with the default credentials.');
+      // Use typed values if provided, otherwise fall back to defaults
+      const payload = {
+        email: email?.trim() || 'admin@example.com',
+        password: password || 'admin12345',
+      };
+      await api.post('/api/auth/seed', payload);
+      if (!email) setEmail(payload.email);
+      if (!password) setPassword(payload.password);
+      setStatus('Seeded. You can now log in (existing admin would have its password updated).');
       if (typeof window !== 'undefined' && typeof window.__notify === 'function') window.__notify('Default admin created', 'success');
       // refresh status
       try {
@@ -63,7 +61,7 @@ export default function AdminLogin() {
         setAdminExists(Boolean(res.data?.exists));
       } catch {}
     } catch (e) {
-      setStatus('Seeding failed or already exists.');
+      setStatus('Seeding failed. Ensure ALLOW_SEED=1 on server.');
     }
   }
 
@@ -83,20 +81,20 @@ export default function AdminLogin() {
         {status && <p className="text-sm text-slate-300">{status}</p>}
       </form>
       <div className="mt-6 border-t border-white/10 pt-4">
-        <p className="text-xs text-slate-400 mb-2">Dev helper</p>
+        <p className="text-xs text-slate-400 mb-2">Admin recovery</p>
         <button
           onClick={seedDefault}
-          disabled={!canSeed || adminExists}
-          className={`text-sm rounded-lg border border-white/10 px-3 py-1.5 ${(!canSeed || adminExists) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white/10 text-slate-200'}`}
+          disabled={!canSeed}
+          className={`text-sm rounded-lg border border-white/10 px-3 py-1.5 ${!canSeed ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white/10 text-slate-200'}`}
         >
-          Seed default admin
+          {adminExists ? 'Reset admin password (seed)' : 'Seed admin'}
         </button>
-        <p className="mt-2 text-xs text-slate-400">Email: <span className="text-slate-200">admin@example.com</span> · Password: <span className="text-slate-200">admin12345</span></p>
+        <p className="mt-2 text-xs text-slate-400">
+          Tip: With seeding enabled (ALLOW_SEED=1), this will create an admin if missing or update the password of the existing admin. Uses the email/password entered above (or defaults if empty).
+        </p>
+        <p className="mt-2 text-xs text-slate-400">Defaults: <span className="text-slate-200">admin@example.com</span> / <span className="text-slate-200">admin12345</span></p>
         {!canSeed && (
           <p className="mt-1 text-xs text-amber-400">Seeding is disabled by server (ALLOW_SEED != 1).</p>
-        )}
-        {adminExists && (
-          <p className="mt-1 text-xs text-emerald-400">An admin already exists.</p>
         )}
       </div>
     </div>

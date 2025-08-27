@@ -19,6 +19,29 @@ body {
 	/* Keep layers steady during scroll to avoid perceived cutoff lines */
 	background-attachment: fixed, fixed, fixed, fixed;
 	color: #e5e7eb; /* slate-200 */
+
+
+/* Scroll reveal base */
+.reveal {
+	opacity: 0;
+	transform: translateY(18px);
+	transition: opacity 520ms ease, transform 520ms ease;
+}
+.reveal.is-visible {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+/* Slight staggering via nth-child — light touch to avoid heavy layout costs */
+.grid > *:where(.reveal) { transition-delay: 40ms; }
+.grid > *:where(.reveal):nth-child(2) { transition-delay: 80ms; }
+.grid > *:where(.reveal):nth-child(3) { transition-delay: 120ms; }
+.grid > *:where(.reveal):nth-child(4) { transition-delay: 160ms; }
+.grid > *:where(.reveal):nth-child(5) { transition-delay: 200ms; }
+
+/* Opt-out per element */
+[data-no-reveal="true"] { opacity: unset; transform: unset; }
+/* Utility classes can be composed inline with Tailwind; custom classes omitted to avoid @apply in plain CSS. */
 }
 
 ::selection { background: #38bdf8; color: #0b0b0d; } /* sky-400 */

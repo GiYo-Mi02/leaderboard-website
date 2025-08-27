@@ -6,6 +6,7 @@ import {
   login,
   me,
   updateProfile,
+  googleSignIn,
 } from "../controllers/userController.js";
 import { requireAuth } from "../middleware/authUser.js";
 
@@ -22,6 +23,7 @@ const router = Router();
 
 router.post("/register", register);
 router.post("/login", login);
+router.post("/google", googleSignIn);
 router.get("/me", requireAuth, me);
 router.put("/me", requireAuth, upload.single("avatar"), updateProfile);
 

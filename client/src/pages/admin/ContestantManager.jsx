@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../../shared/axiosClient';
+import AdminLayout from './AdminLayout';
 
 export default function ContestantManager() {
   const [list, setList] = useState([]);
@@ -19,15 +20,16 @@ export default function ContestantManager() {
   }
 
   async function remove(id) {
+    const ok = window.confirm('Delete this contestant? This cannot be undone.');
+    if (!ok) return;
     await api.delete(`/api/contestants/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-    setList(list.filter(x => x._id !== id));
+    setList((prev) => prev.filter(x => x._id !== id));
     if (typeof window !== 'undefined' && typeof window.__notify === 'function') window.__notify('Contestant deleted', 'success');
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-12">
-      <h1 className="text-2xl font-bold text-white">Manage Contestants</h1>
-      <div className="mt-6 overflow-x-auto">
+    <AdminLayout title="Manage Contestants">
+      <div className="overflow-x-auto">
         <table className="min-w-full border border-white/10 divide-y divide-white/10 text-slate-200">
           <thead className="bg-white/5">
             <tr>
@@ -57,6 +59,6 @@ export default function ContestantManager() {
           </tbody>
         </table>
       </div>
-    </div>
+    </AdminLayout>
   );
 }
