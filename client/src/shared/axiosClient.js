@@ -1,6 +1,9 @@
 import axios from "axios";
 
-export const api = axios.create({});
+// Prefer explicitly configured API base, then same-origin /api for local dev via Vite proxy
+const baseURL = (import.meta?.env?.VITE_API_BASE) || "/api";
+
+export const api = axios.create({ baseURL });
 
 api.interceptors.response.use(
   (res) => res,
