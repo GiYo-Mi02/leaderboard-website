@@ -9,6 +9,7 @@ export default defineConfig({
       "/api": {
         target: "http://localhost:5000",
         changeOrigin: true,
+        // no rewrite: preserve /api prefix so backend routes like /api/users work
       },
       "/uploads": {
         target: "http://localhost:5000",
